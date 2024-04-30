@@ -5,15 +5,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "mongodb": "C:/Program%Files/MongoDB/Server/6.0/bin/mongod",
-    "mongosh": "C:/Program%Files/MongoDB/mongosh-2.2.2/bin/mongosh"
+    "start": "node server.js"
     },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^4.19.2",
-    "mongodb": "^6.5.0"
+    "mongodb": "^5.9.2"
   }
 }
