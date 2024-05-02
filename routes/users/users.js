@@ -1,5 +1,5 @@
 import {client, connect} from './db.js';
-const dbName = 'userdb';
+const dbName = 'usersdb';
 const collectionName = 'users';
 connect(); // Connect to MongoDB
 import express from "express";

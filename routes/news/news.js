@@ -1,4 +1,11 @@
 import express from "express";
+import fs from "fs";
+import crypto from "crypto";
+import log from 'npmlog';
+
+// https://blog.logrocket.com/fetch-api-node-js/
+// https://www.npmjs.com/package/node-fetch
+// import fetch from "node-fetch";
 const router = express.Router();
 
 const apiKey = process.env.API_KEY;
@@ -20,19 +27,49 @@ export function createUrlFromQueryObject(queryObjectWithApiKey) {
     }
 
 export async function fetchData(url) {
-    let data = null;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        let data = null;
+      
+        // https://odino.org/generating-the-md5-hash-of-a-string-in-nodejs/
+        let urlHash = crypto.createHash("md5").update(url).digest("hex");
+        let cacheFile = "news-cache/" + urlHash + ".json";
+        log.info('fetchData', `urlHash: ${urlHash}, cacheFile: ${cacheFile}`);
+      
+        if (fs.existsSync(cacheFile)) {    
+          // https://stackoverflow.com/questions/17552017/get-file-created-date-in-node
+          fs.stat(cacheFile, function (err, stats) {
+            // console.log(JSON.stringify(stats));
+            // date math from LibertyGPT
+            const currentTime = new Date().getTime();
+            const modifiedTime = stats.mtime.getTime();
+            const diffMs = currentTime - modifiedTime; // milliseconds??
+            const diffMins = Math.floor(diffMs / (1000 * 6));      
+            if (diffMins > 60) {
+              log.info('fetchData', `cacheFile exists, data is stale, deleting file; diffMins: ${diffMins}`);        
+              fs.unlinkSync(cacheFile);
+            } else {
+              data = JSON.parse(fs.readFileSync(cacheFile));
+              log.info('fetchData', `cacheFile exists, data is valid (${data.length} bytes); diffMins: ${diffMins}`);        
+            }
+          });
         }
-        data = await response.json();
+      
+        if (data == null) {    
+          try {
+            const response = await fetch(url); // not natively supported in Node 14, need to use node-fetch
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            data = await response.json();
+            log.info('fetchData', `retrieved data (${data.length} bytes), saving to disk`);
+            fs.writeFileSync(cacheFile, JSON.stringify(data));      
+          } catch (error) {
+            console.error("Error fetching data:", error);
+            return null;
+          }
+        }
+      
         return data;
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        return null;
-    }
-}
+      }
 
 router.get('/', async (req, res) => {
     let fixedQueryObject = {
