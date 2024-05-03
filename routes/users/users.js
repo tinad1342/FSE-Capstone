@@ -32,7 +32,7 @@ router.post('/authenticate', async (req, res) => {
                 res.send("Authentication Successful");
             } else {
                 res.status(401);
-                res.send("Incorrect Password");
+                res.send("Access Denied");
             }
         }
         } catch (err) {
